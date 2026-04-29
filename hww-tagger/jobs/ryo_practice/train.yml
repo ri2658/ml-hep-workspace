@@ -48,7 +48,7 @@ spec:
 
               cd /workspace/pt
 
-              # IMPORTANT: dataset now lives on persistent volume
+              # IMPORTANT: dataset now lives on a persistent volume
               export DATADIR_JetClass=/data/JetClass
 
               if [ ! -d "$DATADIR_JetClass/Pythia/train_100M" ]; then
