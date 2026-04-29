@@ -1,0 +1,118 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mq-mkdirs
+  labels:
+    app: weavertagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger:latest
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git -C /hwwtaggervol/melissa-weaver pull &&
+          mkdir -p /hwwtaggervol/training/AK8_Jan19  &&
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test &&
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train &&
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/BulkGravitonToHHTo4W_JHUGen_MX-600to6000_MH-15to250_v2
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/BulkGravitonToHHTo4W_JHUGen_MX-600to6000_MH-15to250_v2
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/BulkGravitonToHHTo4W_JHUGen_MX-600to6000_MH-15to250_v2_ext1
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/BulkGravitonToHHTo4W_JHUGen_MX-600to6000_MH-15to250_v2_ext1
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/HJ_Nano2
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/HJ_Nano2
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/JHUVariableWMass_part1
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/JHUVariableWMass_part1
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/JHUVariableWMass_part2
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/JHUVariableWMass_part2
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/JHUVariableWMass_part3
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/JHUVariableWMass_part3
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/QCD_HT1000to1500
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/QCD_HT1000to1500
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/QCD_HT100to200
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/QCD_HT100to200
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/QCD_HT1500to2000
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/QCD_HT1500to2000
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/QCD_HT2000toInf
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/QCD_HT2000toInf
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/QCD_HT200to300
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/QCD_HT200to300
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/QCD_HT300to500
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/QCD_HT300to500
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/QCD_HT500to700
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/QCD_HT500to700
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/QCD_HT50to100
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/QCD_HT50to100
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/QCD_HT700to1000
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/QCD_HT700to1000
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/TTToHadronic
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/TTToHadronic
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/TTToSemiLeptonic
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/TTToSemiLeptonic
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/WJetsToLNu_HT-1200To2500
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/WJetsToLNu_HT-1200To2500
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/WJetsToLNu_HT-200To400
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/WJetsToLNu_HT-200To400
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/WJetsToLNu_HT-2500ToInf
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/WJetsToLNu_HT-2500ToInf
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/WJetsToLNu_HT-400To600
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/WJetsToLNu_HT-400To600
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/WJetsToLNu_HT-600To800
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/WJetsToLNu_HT-600To800
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/WJetsToLNu_HT-800To1200
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/train/WJetsToLNu_HT-800To1200
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/GluGluHToWW_Pt-200ToInf_M-125
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/GluGluToBulkGravitonToHHTo4W_JHUGen_M-2500_narrow
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/NMSSM_XToYH_MX1600_MY100_HTo2bYTo2W_hadronicDecay
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/NMSSM_XToYH_MX1600_MY125_HTo2bYTo2W_hadronicDecay
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/NMSSM_XToYH_MX1600_MY190_HTo2bYTo2W_hadronicDecay
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/NMSSM_XToYH_MX1600_MY300_HTo2bYTo2W_hadronicDecay
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/NMSSM_XToYH_MX1600_MY600_HTo2bYTo2W_hadronicDecay
+          mkdir -p /hwwtaggervol/training/AK8_Jan19/test/QCD_Pt_150to3000_herwig
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        - name: git-repo
+          mountPath: /opt/repo
+        resources:
+          limits:
+            memory: 40Gi
+            cpu: "8"
+            nvidia.com/gpu: "2"
+          requests:
+            memory: 32Gi
+            cpu: "6"
+            nvidia.com/gpu: "2"
+      initContainers:
+      - name: init-clone-repo
+        image: alpine/git
+        args:
+          - clone
+          - --single-branch
+          - https://github.com/quinnanm/weaver
+          - /opt/repo/weaver
+        volumeMounts:
+          - name: git-repo
+            mountPath: /opt/repo
+      volumes:
+      - name: git-repo
+        emptyDir: {}
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-GeForce-GTX-1080
+                - NVIDIA-GeForce-GTX-1080-Ti
+                - NVIDIA-GeForce-GTX-2080-Ti
+      restartPolicy: Never
+  backoffLimit: 0

@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: weaver-job-rk-nn-pyg-ef-cw-8-2-inference
+  labels:
+    app: weavertagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger:latest
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git clone https://github.com/rkansal47/weaver &&
+          cd weaver &&
+          mkdir -p /hwwtaggervol/inferences/rk /hwwtaggervol/logs/rk/inferences &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/rk/03_15_pyg_ef_nn_cw_8_2.root
+          --data-test '/hwwtaggervol/training/ak15_Mar15/test/QCD*/*.root'
+          '/hwwtaggervol/training/ak15_Mar15/test/BulkGraviton*/*.root'
+          '/hwwtaggervol/training/ak15_Mar15/test/GluGluToHHTobbVV_node_cHHH1_pn4q/*.root'
+          --data-config data/new_ntuples/ak15_4q3q_flat_eta_genHm_pt300_cw_8_2.yaml
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/rk/03_15_pyg_ef_nn_cw_8_2/03_15_pyg_ef_nn_cw_8_2_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 8
+          | tee /hwwtaggervol/logs/rk/inferences/02_23_pyg_ef_ul_cw_8_2.txt) &&
+          pip install coffea mplhep --upgrade && mkdir -p /hwwtaggervol/plots/rk/03_15_pyg_ef_nn_cw_8_2/ &&
+          (python -u plot_classification_fromoutput.py
+          --name "ParticleNet-EF"
+          --ifile /hwwtaggervol/inferences/rk/03_15_pyg_ef_nn_cw_8_2.root
+          --odir /hwwtaggervol/plots/rk/03_15_pyg_ef_nn_cw_8_2/
+          --signals hww_4q_merged,hww_3q_merged
+          --bkgs qcd,qcd
+          --mbranch fj_genRes_mass
+          | tee /hwwtaggervol/plots/rk/03_15_pyg_ef_nn_cw_8_2/log.txt &
+          wait)
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        resources:
+          limits:
+            memory: 40Gi
+            cpu: "8"
+            nvidia.com/gpu: "2"
+          requests:
+            memory: 32Gi
+            cpu: "6"
+            nvidia.com/gpu: "2"
+      volumes:
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-GeForce-GTX-1080
+                - NVIDIA-GeForce-GTX-1080-Ti
+                - NVIDIA-GeForce-GTX-2080-Ti
+      restartPolicy: Never
+  backoffLimit: 0

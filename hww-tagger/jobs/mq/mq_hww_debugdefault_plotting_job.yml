@@ -1,0 +1,139 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mqhwwinference-29sep22-ak8-semilep-debugdefault
+  labels:
+    app: weavertagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger:latest
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git -C /hwwtaggervol/melissa-weaver pull &&
+          mkdir -p /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault &&
+          cd /opt/repo/weaver &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/ttbar.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/TTTo*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_debugdefault.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/29sep22-ak8-semilep-debugdefault/29sep22-ak8-semilep-debugdefault_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/log_ttbar.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/wjets.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/WJetsTo*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_debugdefault.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/29sep22-ak8-semilep-debugdefault/29sep22-ak8-semilep-debugdefault_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/log_wjets.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/jhu.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/JHUV*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_debugdefault.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/29sep22-ak8-semilep-debugdefault/29sep22-ak8-semilep-debugdefault_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/log_jhu.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/hww.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/GluGluHToWW*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_debugdefault.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/29sep22-ak8-semilep-debugdefault/29sep22-ak8-semilep-debugdefault_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/log_hww.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/bulkg.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/GluGluToBulkGravitonToHHTo4W*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_debugdefault.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/29sep22-ak8-semilep-debugdefault/29sep22-ak8-semilep-debugdefault_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/log_bulkg.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/qcd.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/QCD*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_debugdefault.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/29sep22-ak8-semilep-debugdefault/29sep22-ak8-semilep-debugdefault_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/29sep22-ak8-semilep-debugdefault/log_qcd.txt) &&
+          (python -u plots/plot_losses.py
+          --model-path /hwwtaggervol/models/mq/29sep22-ak8-semilep-debugdefault/29sep22-ak8-semilep-debugdefault
+          --output /hwwtaggervol/plots/mq/29sep22-ak8-semilep-debugdefault/losses.png
+          | tee -a /hwwtaggervol/plots/mq/29sep22-ak8-semilep-debugdefault/losslog.txt)
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        - name: git-repo
+          mountPath: /opt/repo
+        resources:
+          limits:
+            memory: 40Gi
+            cpu: "8"
+            nvidia.com/gpu: "2"
+          requests:
+            memory: 32Gi
+            cpu: "6"
+            nvidia.com/gpu: "2"
+      initContainers:
+      - name: init-clone-repo
+        image: alpine/git
+        args:
+          - clone
+          - --single-branch
+          - https://github.com/quinnanm/weaver
+          - /opt/repo/weaver
+        volumeMounts:
+          - name: git-repo
+            mountPath: /opt/repo
+      volumes:
+      - name: git-repo
+        emptyDir: {}
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-GeForce-GTX-1080
+                - NVIDIA-GeForce-GTX-1080-Ti
+                - NVIDIA-GeForce-GTX-2080-Ti
+      restartPolicy: Never
+  backoffLimit: 0

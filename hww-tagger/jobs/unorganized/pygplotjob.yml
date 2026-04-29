@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: weaver-job-rk-plot-pygtest
+  labels:
+    app: hwwtaggervol
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger/weaver
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git clone https://github.com/rkansal47/weaver &&
+          cd weaver &&
+          mkdir -p /hwwtaggervol/plots/rk/pyg_test /hwwtaggervol/logs/rk/plots &&
+          (python -u plot_classification_fromoutput.py
+          --ifile /hwwtaggervol/inferences/rk/pyg_test.root
+          --odir /hwwtaggervol/plots/rk/pyg_test
+          --name "pyg_test"
+          --signals hww_munuqq_merged,hww_elenuqq_merged
+          --bkgs qcd,qcd
+          | tee /hwwtaggervol/logs/rk/pyg_test.txt &
+          wait)
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        resources:
+          limits:
+            memory: 256Gi
+            cpu: "4"
+            # nvidia.com/gpu: "4"
+          requests:
+            memory: 64Gi
+            cpu: "1"
+            # nvidia.com/gpu: "4"
+      volumes:
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      restartPolicy: Never
+  backoffLimit: 0
+

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hwwserverdep 
+  labels:
+    run: hwwserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: hwwserver
+  template:
+    metadata: 
+      labels:
+        run: hwwserver
+    spec:
+      containers:
+      - name: hwwserverdep
+        image: python:3 
+        resources:
+           limits:
+             memory: 500Mi
+             cpu: "1"
+           requests:
+             memory: 1Mi
+             cpu: 10m
+        workingDir: /hwwtaggervol
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        command: ["python", "-m", "http.server"] 
+      volumes:
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west

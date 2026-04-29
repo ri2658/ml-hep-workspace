@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+  name: hwwingress
+spec:
+  rules:
+  - host: hvvtagger.nrp-nautilus.io
+    http:
+      paths:
+      - backend:
+          service:
+            name: hwwexpose
+            port:
+              number: 8000
+        path: /
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - hvvtagger.nrp-nautilus.io

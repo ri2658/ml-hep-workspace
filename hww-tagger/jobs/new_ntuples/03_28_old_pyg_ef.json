@@ -1,0 +1,5 @@
+{
+  "data_config": "old_ak15_4q3q_flat_eta_genHm_pt300",
+  "network_config": "particle_net_pf_sv_4_layers_pyg_ef.py",
+  "model_path": "/hwwtaggervol/models/rk/4_11_pyg_ef_test_2/pyg_ef_test_best_epoch_state.pt"
+}

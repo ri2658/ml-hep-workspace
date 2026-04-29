@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: weaver-job-zh-signals-rk-test
+  labels:
+    app: weavertagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger/weaver
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git clone https://github.com/zichunhao/weaver &&
+          cd weaver &&
+          git fetch &&
+          git checkout zh-plot &&
+          mkdir -p /hwwtaggervol/models/zh_classifications/ak15Jul27_signals_lr3em3_w2 &&
+          (python -u train.py
+          --data-train '/hwwtaggervol/training/ak15_Jul27/train/QCD*/*.root' 
+          '/hwwtaggervol/training/ak15_Jul27/train/Grav*/*.root' 
+          '/hwwtaggervol/training/ak15_Jul27/train/TT*/*.root'
+          --data-config data/ak15_points_pf_sv_mass_classification_signals_only.yaml
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/models/zh_classifications/ak15Jul27_signals_lr3em3_w2/ak15Jul27_signals_lr3em3_w2_classification
+          --num-workers 2
+          --batch-size 256
+          --num-epochs 16
+          --start-lr 3e-3
+          --optimizer ranger
+          --gpu "0,1"
+          --fetch-step 0.02
+          | tee /hwwtaggervol/logs/zh_classifications/ak15Jul27_signals_lr3em3_w2_new_image_test.log &
+          wait)
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        resources:
+          limits:
+            memory: 256Gi
+            cpu: "4"
+            nvidia.com/gpu: "2"
+          requests:
+            memory: 70Gi
+            cpu: "3"
+            nvidia.com/gpu: "2"
+      volumes:
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+              - key: gpu-type
+                operator: In
+                values:
+                - "1080"
+                - 1080Ti
+                - 2080Ti
+      restartPolicy: Never
+  backoffLimit: 0
+

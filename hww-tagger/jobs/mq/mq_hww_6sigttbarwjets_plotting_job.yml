@@ -1,0 +1,165 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mqhwwinference-ak8-23may-ttbarwjets-6sig
+  labels:
+    app: weavertagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger:latest
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git -C /hwwtaggervol/melissa-weaver pull &&
+          mkdir -p /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig &&
+          mkdir -p /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig &&
+          mkdir -p /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig/wjets &&
+          mkdir -p /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig/ttbar &&
+          mkdir -p /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig/ttbarwjets &&
+          mkdir -p /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig/qcd &&
+          cd /opt/repo/weaver &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/ttbar.root
+          --data-test "/hwwtaggervol/training/ak8_Apr14/test//TTTo*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_ttbarwjets.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/05_09_ak8_ttbarwjets6sig/05_09_ak8_ttbarwjets6sig_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/log_ttbar.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/ttbarwjets.root
+          --data-test "/hwwtaggervol/training/ak8_Apr14/test//TTTo*/*.root" "/hwwtaggervol/training/ak8_Apr14/test//WJetsTo*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_ttbarwjets.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/05_09_ak8_ttbarwjets6sig/05_09_ak8_ttbarwjets6sig_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/log_ttbarwjets.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/wjets.root
+          --data-test "/hwwtaggervol/training/ak8_Apr14/test//WJetsTo*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_ttbarwjets.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/05_09_ak8_ttbarwjets6sig/05_09_ak8_ttbarwjets6sig_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/log_wjets.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/bulkg.root
+          --data-test '/hwwtaggervol/training/ak8_Apr14/test/Bulk*/*.root'
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_ttbarwjets.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/05_09_ak8_ttbarwjets6sig/05_09_ak8_ttbarwjets6sig_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/log_bulkg.txt) && 
+          pip install coffea mplhep --upgrade &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/hwwlnuqq.root
+          --data-test '/hwwtaggervol/training/ak8_Apr14/test/GluGluHToWWToLNuQQ*/*.root'
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_ttbarwjets.yaml
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/05_09_ak8_ttbarwjets6sig/05_09_ak8_ttbarwjets6sig_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/log_lnuqq.txt) && 
+          (python -u plots/plot_classification_fromoutput.py
+          --name ParticleNet-PyG-EF
+          --ifile /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/ttbar.root
+          --odir /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig/ttbar/
+          --signals hww_elenuqq_merged, hww_elenuqq_semimerged, hww_munuqq_merged, hww_munuqq_semimerged, hww_taunuqq_merged, hww_taunuqq_semimerged
+          --bkgs ttbar,ttbar,ttbar,ttbar,ttbar,ttbar
+          --mbranch fj_genRes_mass
+          --jet AK8
+          -v
+          --isig /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/bulkg.root,/hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/hwwlnuqq.root
+          --isignames BulkGSMHiggs,SMHiggs
+          | tee -a /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig/log_ttbarplot.txt) &&
+          (python -u plots/plot_classification_fromoutput.py
+          --name ParticleNet-PyG-EF
+          --ifile /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/ttbar.root
+          --odir /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig/ttbarwjets/
+          --signals  hww_elenuqq_merged, hww_elenuqq_semimerged, hww_munuqq_merged, hww_munuqq_semimerged, hww_taunuqq_merged, hww_taunuqq_semimerged
+          --bkgs ttbarwjets,ttbarwjets,ttbarwjets,ttbarwjets,ttbarwjets,ttbarwjets
+          --mbranch fj_genRes_mass
+          --jet AK8
+          -v
+          --isig /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/bulkg.root,/hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/hwwlnuqq.root
+          --isignames BulkGSMHiggs,SMHiggs
+          | tee -a /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig/log_ttbarplotbsplit.txt) &&
+          (python -u plots/plot_classification_fromoutput.py
+          --name ParticleNet-PyG-EF
+          --ifile /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/wjets.root
+          --odir /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig/wjets/
+          --signals  hww_elenuqq_merged, hww_elenuqq_semimerged, hww_munuqq_merged, hww_munuqq_semimerged, hww_taunuqq_merged, hww_taunuqq_semimerged
+          --bkgs wjets,wjets,wjets,wjets,wjets,wjets
+          --mbranch fj_genRes_mass
+          --jet AK8
+          -v
+          --isig /hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/bulkg.root,/hwwtaggervol/inferences/mq/10may-1lepvttbarwjets-6sig/hwwlnuqq.root
+          --isignames BulkGSMHiggs,SMHiggs
+          | tee -a /hwwtaggervol/plots/mq/10may-1lepvttbarwjets-6sig/log_wjetsplot.txt)
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        - name: git-repo
+          mountPath: /opt/repo
+        resources:
+          limits:
+            memory: 40Gi
+            cpu: "8"
+            nvidia.com/gpu: "2"
+          requests:
+            memory: 32Gi
+            cpu: "6"
+            nvidia.com/gpu: "2"
+      initContainers:
+      - name: init-clone-repo
+        image: alpine/git
+        args:
+          - clone
+          - --single-branch
+          - https://github.com/quinnanm/weaver
+          - /opt/repo/weaver
+        volumeMounts:
+          - name: git-repo
+            mountPath: /opt/repo
+      volumes:
+      - name: git-repo
+        emptyDir: {}
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-GeForce-GTX-1080
+                - NVIDIA-GeForce-GTX-1080-Ti
+                - NVIDIA-GeForce-GTX-2080-Ti
+      restartPolicy: Never
+  backoffLimit: 0

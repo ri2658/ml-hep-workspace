@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: weaver-job-rk
+  labels:
+    app: hwwtagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger/weaver
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git clone https://github.com/cmantill/weaver && cd weaver &&
+          (python -u train.py
+          --data-train '/hwwtaggervol/training/ak15_Jul16/QCD*/*.root' '/hwwtaggervol/training/ak15_Jul16/Grav*/*.root'
+          --data-config data/ak15hww_points_pf_sv_pt_decorr.yaml
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/models/v03/1_ak15_v03_hwwvsQCD_bsize256_fstep0p02_lr3em3
+          --num-workers 2
+          --batch-size 64
+          --num-epochs 1
+          --start-lr 3e-3
+          --optimizer ranger
+          --gpu "0,1,2"
+          --fetch-step 0.02
+          | tee /hwwtaggervol/logs/zh-w2.log &
+          wait)
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        resources:
+          limits:
+            memory: 256Gi
+            cpu: "4"
+            nvidia.com/gpu: "3"
+          requests:
+            memory: 70Gi
+            cpu: "3"
+            nvidia.com/gpu: "3"
+      volumes:
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+              - key: gpu-type
+                operator: In
+                values:
+                - "1080"
+                - 1080Ti
+                - 2080Ti
+      restartPolicy: Never
+  backoffLimit: 0
+

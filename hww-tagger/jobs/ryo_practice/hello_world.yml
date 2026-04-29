@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: helloworld
+  namespace: cms-ml
+spec:
+  template:
+    metadata:
+      name: helloworld
+    spec:
+      containers:
+        - name: helloworld
+          image: python:3.11-slim
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - pip install torch && python -c "import torch"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+      restartPolicy: OnFailure

@@ -1,0 +1,135 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mqhwwinference-20oct22-ak8-semilep-pkucomp
+  labels:
+    app: weavertagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger:latest
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git -C /hwwtaggervol/melissa-weaver pull &&
+          mkdir -p /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp &&
+          cd /opt/repo/weaver &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/ttbar_pku.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/TTTo*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/PKU_ak8_MD_split_cq.yaml 
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/melissa-weaver/PKU_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/log_ttbar.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/wjets_pku.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/WJetsTo*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/PKU_ak8_MD_split_cq.yaml 
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/melissa-weaver/PKU_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/log_wjets.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/jhu_pku.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/JHUV*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/PKU_ak8_MD_split_cq.yaml 
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/melissa-weaver/PKU_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/log_jhu.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/hww_pku.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/GluGluHToWW*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/PKU_ak8_MD_split_cq.yaml 
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/melissa-weaver/PKU_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/log_hww.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/bulkg_pku.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/GluGluToBulkGravitonToHHTo4W*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/PKU_ak8_MD_split_cq.yaml 
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/melissa-weaver/PKU_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/log_bulkg.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/qcd_pku.root
+          --data-test "/hwwtaggervol/training/AK8_Sep16/test/QCD*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/PKU_ak8_MD_split_cq.yaml 
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/melissa-weaver/PKU_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/20oct22-ak8-semilep-pkucomp/log_qcd.txt)
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        - name: git-repo
+          mountPath: /opt/repo
+        resources:
+          limits:
+            memory: 40Gi
+            cpu: "8"
+            nvidia.com/gpu: "2"
+          requests:
+            memory: 32Gi
+            cpu: "6"
+            nvidia.com/gpu: "2"
+      initContainers:
+      - name: init-clone-repo
+        image: alpine/git
+        args:
+          - clone
+          - --single-branch
+          - https://github.com/quinnanm/weaver
+          - /opt/repo/weaver
+        volumeMounts:
+          - name: git-repo
+            mountPath: /opt/repo
+      volumes:
+      - name: git-repo
+        emptyDir: {}
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-GeForce-GTX-1080
+                - NVIDIA-GeForce-GTX-1080-Ti
+                - NVIDIA-GeForce-GTX-2080-Ti
+      restartPolicy: Never
+  backoffLimit: 0

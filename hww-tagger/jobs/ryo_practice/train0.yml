@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: particletransformer-train
+spec:
+  template:
+    spec:
+      volumes:
+        - name: workspace
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+      initContainers:
+        - name: clone-pt
+          image: alpine/git
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eux
+
+              echo "Cloning into workspace..."
+              git clone https://github.com/jet-universe/particle_transformer /workspace/pt
+
+              echo "Verify:"
+              ls -lah /workspace/pt
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "120m"
+              memory: "128Mi"
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: run
+              mountPath: /workspace/run
+
+      containers:
+        - name: main
+          image: gitlab-registry.nrp-nautilus.io/jmduarte/hbb_interaction_network:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              pip install weaver-core
+
+              cd /workspace/pt
+
+              export DATADIR_JetClass=/workspace/run/datasets/JetClass
+
+              if [ ! -d "/workspace/run/datasets/JetClass/Pythia/train_100M" ]; then
+                echo "Downloading JetClass..."
+                python get_datasets.py JetClass -d /workspace/run/datasets
+              else
+                echo "Dataset already exists, skipping download"
+              fi
+
+              echo "Checking dataset..."
+              ls /workspace/run/datasets/JetClass/Pythia/train_100M | head
+
+              mkdir -p /workspace/run/logs /workspace/run/training
+
+              ln -sf /workspace/run/logs logs
+              ln -sf /workspace/run/training training
+
+              ./train_JetClass.sh ParT full
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: run
+              mountPath: /workspace/run
+
+          resources:
+            limits:
+              memory: 38Gi
+              cpu: "2"
+              nvidia.com/gpu: "1"
+            requests:
+              memory: 32Gi
+              cpu: "2"
+              nvidia.com/gpu: "1"
+
+      restartPolicy: Never
+  backoffLimit: 0

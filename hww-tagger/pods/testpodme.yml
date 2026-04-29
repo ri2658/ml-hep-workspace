@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpod
+  namespace: cms-ml
+spec:
+  containers:
+  - name: container
+    image: pytorch/conda-cuda
+    command: ["/bin/bash", "-c", "sleep infinity"]
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: "0.1"
+  restartPolicy: Never

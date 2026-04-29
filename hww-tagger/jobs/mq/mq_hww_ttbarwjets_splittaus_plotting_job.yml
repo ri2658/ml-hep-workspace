@@ -1,0 +1,141 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mqhwwinference-ak8-30jun-1lepvttbarwjets-splittaus
+  labels:
+    app: weavertagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger:latest
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git -C /hwwtaggervol/melissa-weaver pull &&
+          mkdir -p /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus &&
+          mkdir -p /hwwtaggervol/plots/mq/30jun-1lepvttbarwjets-splittaus &&
+          mkdir -p /hwwtaggervol/plots/mq/30jun-1lepvttbarwjets-splittaus/wjets &&
+          mkdir -p /hwwtaggervol/plots/mq/30jun-1lepvttbarwjets-splittaus/ttbar &&
+          mkdir -p /hwwtaggervol/plots/mq/30jun-1lepvttbarwjets-splittaus/ttbarwjets &&
+          mkdir -p /hwwtaggervol/plots/mq/30jun-1lepvttbarwjets-splittaus/qcd &&
+          cd /opt/repo/weaver &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/ttbar.root
+          --data-test "/hwwtaggervol/training/ak8_May30/test//TTTo*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_ttbarwjets_splittaus.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/03_05_ak8_ttbarwjets-splittaus/03_05_ak8_ttbarwjets-splittaus_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/log_ttbar.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/wjets.root
+          --data-test "/hwwtaggervol/training/ak8_May30/test//WJetsTo*/*.root"
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_ttbarwjets_splittaus.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/03_05_ak8_ttbarwjets-splittaus/03_05_ak8_ttbarwjets-splittaus_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/log_wjets.txt) &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/bulkg.root
+          --data-test '/hwwtaggervol/training/ak8_May30/test/Bulk*/*.root'
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_ttbarwjets_splittaus.yaml 
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/03_05_ak8_ttbarwjets-splittaus/03_05_ak8_ttbarwjets-splittaus_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/log_bulkg.txt) && 
+          pip install coffea mplhep --upgrade &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/hwwlnuqq.root
+          --data-test '/hwwtaggervol/training/ak8_May30/test/GluGluHToWWToLNuQQ*/*.root'
+          --data-config /hwwtaggervol/melissa-weaver/data/mq_ntuples/melissa_dataconfig_semilep_ttbarwjets_splittaus.yaml
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/mq/03_05_ak8_ttbarwjets-splittaus/03_05_ak8_ttbarwjets-splittaus_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/log_lnuqq.txt) && 
+          (python -u plots/plot_classification_fromoutput.py
+          --name ParticleNet-PyG-EF
+          --ifile /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/ttbar.root
+          --odir /hwwtaggervol/plots/mq/30jun-1lepvttbarwjets-splittaus/ttbar/
+          --signals hww_ele,hww_mu,hww_tau_el,hww_tau_mu,hww_tau_had
+          --bkgs ttbar,ttbar,ttbar,ttbar,ttbar
+          --mbranch fj_genRes_mass
+          --jet AK8
+          -v
+          --isig /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/bulkg.root,/hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/hwwlnuqq.root
+          --isignames BulkGSMHiggs,SMHiggs
+          | tee -a /hwwtaggervol/plots/mq/30jun-1lepvttbarwjets-splittaus/log_ttbarplot.txt) &&
+          (python -u plots/plot_classification_fromoutput.py
+          --name ParticleNet-PyG-EF
+          --ifile /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/wjets.root
+          --odir /hwwtaggervol/plots/mq/30jun-1lepvttbarwjets-splittaus/wjets/
+          --signals hww_ele,hww_mu,hww_tau_el,hww_tau_mu,hww_tau_had
+          --bkgs wjets,wjets,wjets,wjets,wjets
+          --mbranch fj_genRes_mass
+          --jet AK8
+          -v
+          --isig /hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/bulkg.root,/hwwtaggervol/inferences/mq/30jun-1lepvttbarwjets-splittaus/hwwlnuqq.root
+          --isignames BulkGSMHiggs,SMHiggs
+          | tee -a /hwwtaggervol/plots/mq/30jun-1lepvttbarwjets-splittaus/log_wjetsplot.txt)
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        - name: git-repo
+          mountPath: /opt/repo
+        resources:
+          limits:
+            memory: 40Gi
+            cpu: "8"
+            nvidia.com/gpu: "2"
+          requests:
+            memory: 32Gi
+            cpu: "6"
+            nvidia.com/gpu: "2"
+      initContainers:
+      - name: init-clone-repo
+        image: alpine/git
+        args:
+          - clone
+          - --single-branch
+          - https://github.com/quinnanm/weaver
+          - /opt/repo/weaver
+        volumeMounts:
+          - name: git-repo
+            mountPath: /opt/repo
+      volumes:
+      - name: git-repo
+        emptyDir: {}
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-GeForce-GTX-1080
+                - NVIDIA-GeForce-GTX-1080-Ti
+                - NVIDIA-GeForce-GTX-2080-Ti
+      restartPolicy: Never
+  backoffLimit: 0

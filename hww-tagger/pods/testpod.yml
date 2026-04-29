@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpod
+  labels:
+    app: hwwtagger
+spec:
+  containers:
+  - name: container
+    image: pytorch/conda-cuda
+    command: ["/bin/bash", "-c", "sleep infinity"]
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 100m
+      #  nvidia.com/gpu: "1"
+        ephemeral-storage: 50Gi
+    volumeMounts:
+    - mountPath: /hwwtaggervol
+      name: hwwtaggervol
+  restartPolicy: Never
+  volumes:
+    - name: hwwtaggervol
+      persistentVolumeClaim:
+        claimName: hwwtaggervol

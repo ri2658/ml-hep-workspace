@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: weaver-job-rk-inference-pyg-ef
+  labels:
+    app: hwwtagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger/weaver
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git clone https://github.com/rkansal47/weaver &&
+          cd weaver &&
+          mkdir -p /hwwtaggervol/inferences/rk /hwwtaggervol/logs/rk/inferences &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/rk/pyg_ef_test.root
+          --data-test '/hwwtaggervol/training/ak15_Jul27/test/QCD*/*.root'
+          '/hwwtaggervol/training/ak15_Jul27/*/*HHTo4V*/*.root'
+          '/hwwtaggervol/training/ak15_Jul27/test/*HToWW*/*.root'
+          --data-config data/cm/ak15_4q3q_flat_eta_genHm_pt300.yaml
+          --network-config networks/particle_net_pf_sv_4_layers_pyg_ef.py
+          --model-prefix /hwwtaggervol/models/rk/4_11_pyg_ef_test_2/pyg_ef_test_best_epoch_state.pt
+          --gpus "0"
+          --batch-size 256
+          --fetch-step 0.02
+          | tee /hwwtaggervol/logs/rk/inferences/pyg_ef_test.log) &&
+          pip install coffea mplhep --upgrade && mkdir -p hwwtaggervol/plots/rk/pyg_ef_test/ &&
+          (python -u plot_classification_fromoutput.py
+          --name "pyg_ef_test"
+          --ifile /hwwtaggervol/inferences/rk/pyg_ef_test.root
+          --odir /hwwtaggervol/plots/rk/pyg_ef_test
+          --signals hww_4q_merged,hww_3q_merged
+          --bkgs qcd,qcd
+          | tee /hwwtaggervol/plots/rk/pyg_ef_test/log.txt &
+          wait)
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        resources:
+          limits:
+            memory: 256Gi
+            cpu: "4"
+            nvidia.com/gpu: "1"
+          requests:
+            memory: 32Gi
+            cpu: "3"
+            nvidia.com/gpu: "1"
+      volumes:
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: gpu-type
+                operator: In
+                values:
+                - "1080"
+                - 1080Ti
+                - 2080Ti
+      restartPolicy: Never
+  backoffLimit: 0

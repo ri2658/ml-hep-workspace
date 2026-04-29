@@ -1,0 +1,6 @@
+{
+  "data_config_dir": "/hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass/",
+  "data_config": "ak8_points_pf_sv_mass_decorr_HWWvsQCD_hybridmass.yaml",
+  "network_config": "particle_net_pf_sv",
+  "model_path": "/hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass/pnet.HWWvsQCD.hybridmass_best_epoch_state.pt"
+}

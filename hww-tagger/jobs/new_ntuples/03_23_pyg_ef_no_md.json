@@ -1,0 +1,7 @@
+{
+  "data_config": "ak15_4q3q_h125",
+  "data_train_dir": "ak15_Mar15",
+  "data_test_dir": "ak15_Mar15",
+  "train_samples": ["train/QCD*", "signal_split/train/*HH*"],
+  "inference_samples": ["test/QCD*", "test/BulkGraviton*", "test/GluGluToBulkGravitonToHHTo4W_JHUGen_M-2500_narrow", "signal_split/test/GluGluToHHTobbVV_node_cHHH1_pn4q", "signal_split/test/jhu_HHbbWW"]
+}

@@ -1,0 +1,140 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: weaver-job-rk-03-23-pku-ak15-inference
+  labels:
+    app: weavertagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger:latest
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          mkdir -p /hwwtaggervol/inferences/rk/03_23_pku_ak15 &&
+          mkdir -p /hwwtaggervol/plots/rk/03_23_pku_ak15 &&
+          cd /opt/repo/weaver &&
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/rk/03_23_pku_ak15/qcd.root
+          --data-test '/hwwtaggervol/training/ak15_Mar15/test//QCD*/*.root'
+          --data-config /hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass//ak8_points_pf_sv_mass_decorr_HWWvsQCD_hybridmass.yaml
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass/pnet.HWWvsQCD.hybridmass_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/rk/03_23_pku_ak15/log.txt) && 
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/rk/03_23_pku_ak15/bulkg_hflat.root
+          --data-test '/hwwtaggervol/training/ak15_Mar15/test//BulkGraviton*/*.root'
+          --data-config /hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass//ak8_points_pf_sv_mass_decorr_HWWvsQCD_hybridmass.yaml
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass/pnet.HWWvsQCD.hybridmass_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/rk/03_23_pku_ak15/log.txt) && 
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/rk/03_23_pku_ak15/bulkg_hsm.root
+          --data-test '/hwwtaggervol/training/ak15_Mar15/test//GluGluToBulkGravitonToHHTo4W_JHUGen_M-2500_narrow/*.root'
+          --data-config /hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass//ak8_points_pf_sv_mass_decorr_HWWvsQCD_hybridmass.yaml
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass/pnet.HWWvsQCD.hybridmass_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/rk/03_23_pku_ak15/log.txt) && 
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/rk/03_23_pku_ak15/HHbbVV.root
+          --data-test '/hwwtaggervol/training/ak15_Mar15/test//GluGluToHHTobbVV_node_cHHH1_pn4q/*.root'
+          --data-config /hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass//ak8_points_pf_sv_mass_decorr_HWWvsQCD_hybridmass.yaml
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass/pnet.HWWvsQCD.hybridmass_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/rk/03_23_pku_ak15/log.txt) && 
+          (python -u train.py
+          --predict
+          --predict-output /hwwtaggervol/inferences/rk/03_23_pku_ak15/jhu_HHbbWW.root
+          --data-test '/hwwtaggervol/training/ak15_Mar15/test//jhu_HHbbWW/*.root'
+          --data-config /hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass//ak8_points_pf_sv_mass_decorr_HWWvsQCD_hybridmass.yaml
+          --network-config networks/particle_net_pf_sv.py
+          --model-prefix /hwwtaggervol/models/pku/pnet.HWWvsQCD.hybridmass/pnet.HWWvsQCD.hybridmass_best_epoch_state.pt
+          --gpus "0,1"
+          --batch-size 256
+          --fetch-step 0.02
+          --num-workers 2
+          | tee -a /hwwtaggervol/inferences/rk/03_23_pku_ak15/log.txt) &&
+          pip install coffea mplhep --upgrade &&
+          (python -u plots/plot_classification_fromoutput.py
+          --name ParticleNet-PyG-EF
+          --ifile /hwwtaggervol/inferences/rk/03_23_pku_ak15/qcd.root
+          --odir /hwwtaggervol/plots/rk/03_23_pku_ak15/
+          --signals hww_4q_merged,hww_3q_merged
+          --bkgs qcdnolep,qcdnolep
+          --mbranch fj_genRes_mass
+          --jet AK15
+          -v
+          --isig /hwwtaggervol/inferences/rk/03_23_pku_ak15/bulkg_hflat.root,/hwwtaggervol/inferences/rk/03_23_pku_ak15/bulkg_hsm.root,/hwwtaggervol/inferences/rk/03_23_pku_ak15/HHbbVV.root,/hwwtaggervol/inferences/rk/03_23_pku_ak15/jhu_HHbbWW.root
+          --isignames BulkGFlatHiggs,BulkGSMHiggs,PythiaHHbbVV,JHUHHbbWW
+          | tee -a /hwwtaggervol/plots/rk/03_23_pku_ak15/log.txt) &&
+          (python -u plots/plot_losses.py
+          --model-path  /hwwtaggervol/models/rk/03_23_pku_ak15/03_23_pku_ak15
+          --output /hwwtaggervol/plots/rk/03_23_pku_ak15/losses.png
+          | tee -a /hwwtaggervol/plots/rk/03_23_pku_ak15/log.txt)
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        - name: git-repo
+          mountPath: /opt/repo
+        resources:
+          limits:
+            memory: 40Gi
+            cpu: "8"
+            nvidia.com/gpu: "2"
+          requests:
+            memory: 32Gi
+            cpu: "6"
+            nvidia.com/gpu: "2"
+      initContainers:
+      - name: init-clone-repo
+        image: alpine/git
+        args:
+          - clone
+          - --single-branch
+          - https://github.com/rkansal47/weaver
+          - /opt/repo/weaver
+        volumeMounts:
+          - name: git-repo
+            mountPath: /opt/repo
+      volumes:
+      - name: git-repo
+        emptyDir: {}
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-GeForce-GTX-1080
+                - NVIDIA-GeForce-GTX-1080-Ti
+                - NVIDIA-GeForce-GTX-2080-Ti
+      restartPolicy: Never
+  backoffLimit: 0

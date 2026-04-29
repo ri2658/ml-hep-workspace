@@ -1,0 +1,100 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mqhwwinference-ak8-11may-allhad
+  labels:
+    app: weavertagger
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        image: gitlab-registry.nrp-nautilus.io/raghsthebest/hww-tagger:latest
+        command:
+        - "/bin/bash"
+        - "-c"
+        - >
+          git -C /hwwtaggervol/melissa-weaver pull &&
+          mkdir -p /hwwtaggervol/inferences/mq/11may-0lepvttbarwjets &&
+          mkdir -p /hwwtaggervol/plots/mq/11may-0lepvttbarwjets &&
+          cd /opt/repo/weaver &&
+          (python -u plots/plot_classification_fromoutput.py
+          --name ParticleNet-PyG-EF
+          --ifile /hwwtaggervol/inferences/mq/11may-0lepvttbarwjets/qcd.root
+          --odir /hwwtaggervol/plots/mq/11may-0lepvttbarwjets/qcd/
+          --signals hww_4q_merged,hww_3q_merged
+          --bkgs qcdnolep,qcdnolep
+          --mbranch fj_genRes_mass
+          --jet AK8
+          -v
+          --isig /hwwtaggervol/inferences/mq/11may-0lepvttbarwjets/bulkg.root
+          --isignames BulkGSMHiggs
+          | tee -a /hwwtaggervol/plots/mq/11may-0lepvttbarwjets/log_qcdplot.txt) &&
+          (python -u plots/plot_classification_fromoutput.py
+          --name ParticleNet-PyG-EF
+          --ifile /hwwtaggervol/inferences/mq/11may-0lepvttbarwjets/wjets.root
+          --odir /hwwtaggervol/plots/mq/11may-0lepvttbarwjets/wjets/
+          --signals hww_4q_merged,hww_3q_merged
+          --bkgs w_asqcd,w_asqcd
+          --mbranch fj_genRes_mass
+          --jet AK8
+          -v
+          --isig /hwwtaggervol/inferences/mq/11may-0lepvttbarwjets/bulkg.root
+          --isignames BulkGSMHiggs
+          | tee -a /hwwtaggervol/plots/mq/11may-0lepvttbarwjets/log_wjetsplot.txt) &&
+          (python -u plots/plot_classification_fromoutput.py
+          --name ParticleNet-PyG-EF
+          --ifile /hwwtaggervol/inferences/mq/11may-0lepvttbarwjets/ttbar.root
+          --odir /hwwtaggervol/plots/mq/11may-0lepvttbarwjets/ttbar/
+          --signals hww_4q_merged,hww_3q_merged
+          --bkgs top_asqcd,top_asqcd
+          --mbranch fj_genRes_mass
+          --jet AK8
+          -v
+          --isig /hwwtaggervol/inferences/mq/11may-0lepvttbarwjets/bulkg.root
+          --isignames BulkGSMHiggs
+          | tee -a /hwwtaggervol/plots/mq/11may-0lepvttbarwjets/log_ttbarplot.txt) &&
+        volumeMounts:
+        - mountPath: /hwwtaggervol
+          name: hwwtaggervol
+        - name: git-repo
+          mountPath: /opt/repo
+        resources:
+          limits:
+            memory: 40Gi
+            cpu: "8"
+            nvidia.com/gpu: "2"
+          requests:
+            memory: 32Gi
+            cpu: "6"
+            nvidia.com/gpu: "2"
+      initContainers:
+      - name: init-clone-repo
+        image: alpine/git
+        args:
+          - clone
+          - --single-branch
+          - https://github.com/quinnanm/weaver
+          - /opt/repo/weaver
+        volumeMounts:
+          - name: git-repo
+            mountPath: /opt/repo
+      volumes:
+      - name: git-repo
+        emptyDir: {}
+      - name: hwwtaggervol
+        persistentVolumeClaim:
+          claimName: hwwtaggervol
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-GeForce-GTX-1080
+                - NVIDIA-GeForce-GTX-1080-Ti
+                - NVIDIA-GeForce-GTX-2080-Ti
+      restartPolicy: Never
+  backoffLimit: 0

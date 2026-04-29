@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: graphganpodi
+  labels:
+    app: graphgani
+spec:
+  containers:
+  - name: container
+    image: gitlab-registry.nrp-nautilus.io/raghsthebest/mnist-graph-gan:latest
+    command: ["/bin/bash", "-c", "git clone http://github.com/raghsthebest/mnist_graph_gan && git config --global user.name 'rkansal47' && git config --global user.email 'rkansal@cern.ch' && sleep infinity"]
+    resources:
+      requests:
+        memory: 4Gi
+        cpu: "1"
+      #  nvidia.com/gpu: "1"
+        ephemeral-storage: 512Gi
+    volumeMounts:
+    - mountPath: /graphganvol
+      name: graphganvol
+  restartPolicy: Never
+  volumes:
+    - name: graphganvol
+      persistentVolumeClaim:
+        claimName: graphganvol
