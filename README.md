@@ -1,6 +1,6 @@
 ## 🚀 ML-HEP Workspace
 
-A modular workspace for machine learning workflows in High Energy Physics (HEP), with an emphasis on scalable training, reproducibility, and experimentation on distributed systems.
+A modular workspace for machine learning workflows in High Energy Physics (HEP), with an emphasis on scalable training, reproducibility, and experimentation on distributed systems. Originally forked from https://gitlab.nrp-nautilus.io/raghsthebest/hww-tagger and https://github.com/jet-universe/particle_transformer/tree, combined for convenience.
 
 ## 📌 Overview
 
