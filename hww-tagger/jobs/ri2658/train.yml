@@ -1,0 +1,75 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: particletransformer-train
+  namespace: cms-ml
+spec:
+  backoffLimit: 0
+
+  template:
+    spec:
+      restartPolicy: Never
+
+      volumes:
+        - name: jetclass
+          persistentVolumeClaim:
+            claimName: jetclass
+        - name: workspace
+          emptyDir: {}
+
+      initContainers:
+        - name: clone-code
+          image: alpine/git
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eux
+              git clone --depth 1 https://github.com/jet-universe/particle_transformer /workspace/pt
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+      containers:
+        - name: trainer
+          image: gitlab-registry.nrp-nautilus.io/jmduarte/hbb_interaction_network:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -euo pipefail
+
+              echo "Installing dependencies..."
+              pip install weaver-core
+
+              echo "Checking dataset..."
+              ls /data/JetClass | head
+
+              echo "Entering repo..."
+              cd /workspace/pt
+
+              echo "Running OFFICIAL ParticleTransformer training script..."
+
+              ./train_JetClass.sh ParT full
+
+          volumeMounts:
+            - name: jetclass
+              mountPath: /data
+            - name: workspace
+              mountPath: /workspace
+
+          resources:
+            requests:
+              cpu: "4"
+              memory: "40Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "4"
+              memory: "40Gi"
+              nvidia.com/gpu: "1"
