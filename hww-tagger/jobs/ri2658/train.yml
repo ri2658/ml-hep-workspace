@@ -3,6 +3,7 @@ kind: Job
 metadata:
   name: particletransformer-train
   namespace: cms-ml
+
 spec:
   backoffLimit: 0
 
@@ -11,9 +12,9 @@ spec:
       restartPolicy: Never
 
       volumes:
-        - name: jetclass
+        - name: j-jepa-vol
           persistentVolumeClaim:
-            claimName: jetclass
+            claimName: j-jepa-vol
         - name: workspace
           emptyDir: {}
 
@@ -25,10 +26,10 @@ spec:
             - |
               set -eux
               git clone --depth 1 https://github.com/jet-universe/particle_transformer /workspace/pt
+              chmod -R 777 /workspace
           volumeMounts:
             - name: workspace
               mountPath: /workspace
-
           resources:
             requests:
               cpu: "500m"
@@ -40,26 +41,121 @@ spec:
       containers:
         - name: trainer
           image: gitlab-registry.nrp-nautilus.io/jmduarte/hbb_interaction_network:latest
+
           command: ["/bin/bash", "-c"]
           args:
             - |
               set -euo pipefail
 
-              echo "Installing dependencies..."
-              pip install weaver-core
+              echo "Installing weaver..."
+              pip install --no-cache-dir weaver-core==0.4.17
 
-              echo "Checking dataset..."
-              ls /data/JetClass | head
-
-              echo "Entering repo..."
               cd /workspace/pt
 
-              echo "Running OFFICIAL ParticleTransformer training script..."
+              TRAIN_DIR="/data/JetClass/Pythia/train_100M"
+              VAL_DIR="/data/JetClass/Pythia/val_5M"
 
-              ./train_JetClass.sh ParT full
+              echo "===================================="
+              echo "DATASET VALIDATION (STRICT MODE)"
+              echo "===================================="
+
+              # ---------------- TRAIN ----------------
+              if [[ ! -d "$TRAIN_DIR" ]]; then
+                echo "ERROR: TRAIN_DIR missing: $TRAIN_DIR"
+                exit 1
+              fi
+
+              TRAIN_FILES=$(find "$TRAIN_DIR" -name "*.root")
+              TRAIN_COUNT=$(echo "$TRAIN_FILES" | grep -c ".root" || true)
+
+              echo "Train files: $TRAIN_COUNT"
+
+              if [[ "$TRAIN_COUNT" -lt 100 ]]; then
+                echo "ERROR: insufficient training data"
+                exit 1
+              fi
+
+              echo "Train sample:"
+              echo "$TRAIN_FILES" | head -n 10
+
+              # ---------------- VAL (STRICT) ----------------
+              if [[ ! -d "$VAL_DIR" ]]; then
+                echo "ERROR: VAL_DIR missing: $VAL_DIR"
+                exit 1
+              fi
+
+              VAL_FILES=$(find "$VAL_DIR" -name "*.root" 2>/dev/null || true)
+              VAL_COUNT=$(echo "$VAL_FILES" | grep -c ".root" || true)
+
+              echo "Val files: $VAL_COUNT"
+
+              if [[ "$VAL_COUNT" -lt 10 ]]; then
+                echo "ERROR: validation dataset is empty or incomplete"
+                echo "VAL_DIR contents:"
+                ls -lah "$VAL_DIR" || true
+                exit 1
+              fi
+
+              echo "Val sample:"
+              echo "$VAL_FILES" | head -n 10
+
+              # ---------------- CLASS CHECK ----------------
+              echo "Class distribution:"
+              for cls in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do
+                COUNT=$(find "$TRAIN_DIR" -name "${cls}_*.root" | wc -l || true)
+                echo "$cls: $COUNT"
+              done
+
+              # ---------------- EXPAND FILE LISTS (IMPORTANT FIX) ----------------
+              echo "Expanding file lists..."
+
+              TRAIN_FILES_LIST=$(find "$TRAIN_DIR" -name "*.root" | tr '\n' ' ')
+              VAL_FILES_LIST=$(find "$VAL_DIR" -name "*.root" | tr '\n' ' ')
+
+              # FINAL SAFETY CHECK
+              if [[ -z "$VAL_FILES_LIST" ]]; then
+                echo "FATAL: VAL_FILES_LIST is empty after expansion"
+                exit 1
+              fi
+
+              echo "Locking CUDA environment..."
+
+              export CUDA_VISIBLE_DEVICES=0
+              export NVIDIA_VISIBLE_DEVICES=0
+
+              # prevent distributed / stale rank confusion
+              unset LOCAL_RANK
+              unset RANK
+              unset WORLD_SIZE
+
+              python -c "import torch; print('CUDA devices:', torch.cuda.device_count())"
+
+              echo "Starting training..."
+
+              # ---------------- SAFE WORKER FIX ----------------
+              # Ensure compatibility with persistent_workers=True inside Weaver
+              NUM_WORKERS=2
+
+              if [[ "$NUM_WORKERS" -lt 1 ]]; then
+                echo "Fixing num_workers for persistent_workers compatibility..."
+                NUM_WORKERS=2
+              fi
+
+              # ---------------- TRAIN ----------------
+              weaver \
+                -c data/JetClass/JetClass_full.yaml \
+                -i ZJetsToNuNu:/data/JetClass/Pythia/train_100M/ZJetsToNuNu_*.root \
+                -l /data/JetClass/Pythia/val_5M/*.root \
+                -n networks/example_ParticleTransformer.py \
+                -m training/JetClass/net \
+                --num-epochs 50 \
+                --batch-size 512 \
+                --gpus 0 \
+                --num-workers 2 \
+                --use-amp
 
           volumeMounts:
-            - name: jetclass
+            - name: j-jepa-vol
               mountPath: /data
             - name: workspace
               mountPath: /workspace
